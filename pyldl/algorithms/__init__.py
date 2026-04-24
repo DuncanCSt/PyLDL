@@ -13,7 +13,7 @@ from ._specialized_algorithms import _SA, SA_BFGS, SA_IIS, LALOT
 
 from ._incomplete import IncomLDL, WInLDL
 from ._classifier import LDL4C, LDL_HR, LDLM
-from ._ensemble import RG4LDL, DF_LDL, StructRF, LDLogitBoost, AdaBoostLDL
+# from ._ensemble import RG4LDL, DF_LDL, StructRF, LDLogitBoost, AdaBoostLDL
 
 from ._ldllc import LDLLC
 from ._ldlsf import LDLSF
