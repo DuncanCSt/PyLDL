@@ -1,6 +1,6 @@
 import numpy as np
 
-from numba import jit
+# from numba import jit
 
 from scipy.optimize import minimize
 from scipy.special import softmax
@@ -11,19 +11,19 @@ from pyldl.algorithms.base import BaseADMM, BaseLDL
 from pyldl.algorithms.utils import svt, solvel21, pairwise_euclidean
 
 
-@jit(nopython=True)
+# #@jit(nopython=True)
 def _get_D_pred(X, W):
     exp_XW = np.exp(X @ W)
     return exp_XW / np.sum(exp_XW, axis=1).reshape(-1, 1)
 
 
-@jit(nopython=True)
+# #@jit(nopython=True)
 def _get_D_pred_DSE(D, S, E, X, W):
     D_pred = _get_D_pred(X, W)
     return D_pred, D - D_pred @ S - E
 
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def _update_W_numba(X, D, W, S, E, V, alpha, rho):
     D_pred, DSE = _get_D_pred_DSE(D, S, E, X, W)
     DD2 = D_pred - D_pred ** 2
@@ -39,7 +39,7 @@ def _update_W_numba(X, D, W, S, E, V, alpha, rho):
     return loss, grad.reshape(-1, )
 
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def _update_S_numba(X, D, W, S, E, Z, V, V2, P, sumP, n_clusters, delta, rho):
     D_pred, DSE = _get_D_pred_DSE(D, S, E, X, W)
     inn1 = np.sum(V * DSE)
@@ -58,7 +58,7 @@ def _update_S_numba(X, D, W, S, E, Z, V, V2, P, sumP, n_clusters, delta, rho):
     return loss, grad.reshape(-1, )
 
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def _update_V_numba(X, D, W, S, E, Z, V, V2, rho):
     _, DSE = _get_D_pred_DSE(D, S, E, X, W)
     return V + rho * DSE, V2 + rho * (S - Z)

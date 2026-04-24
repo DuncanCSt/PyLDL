@@ -1,11 +1,11 @@
 import numpy as np
 
-from numba import jit
+#from numba import jit
 
 from pyldl.algorithms.base import BaseADMM, BaseLDL
 
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def _update_W_numba(X, D, W, W1, W2, V, V2, PR, gamma, rho):
     XW = X @ W
     W12 = W - W1 - W2
@@ -28,13 +28,13 @@ def _update_W_numba(X, D, W, W1, W2, V, V2, PR, gamma, rho):
     return loss, grad.reshape(-1, )
 
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def _update_V_numba(X, W, W1, W2, V, V2, rho):
     s = (np.sum(X @ W, axis=1) - 1).reshape(-1, 1)
     return V + rho * (W - W1 - W2), V2 + rho * s
 
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def _calculate_PR_numba(D):
     R = np.corrcoef(D, rowvar=False)
     P = np.diag(R @ np.ones((D.shape[1], )))

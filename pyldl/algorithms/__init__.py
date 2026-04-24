@@ -27,6 +27,8 @@ from ._rknn_ldl import RKNN_LDL
 from ._s_ldl import _S_LDL, S_LRR, S_SCL, S_KLD, S_QFD2, S_CJS, Shallow_S_LDL
 from ._delta_ldl import Delta_LDL
 from ._snefy_ldl import SNEFY_LDL
+from ._edl_ldl import EDL_LDL
+from ._bedl_ldl import BEDL_LDL
 
 from ._ssg_ldl import SSG_LDL
 
@@ -36,6 +38,7 @@ from ._ldl_da import LDL_DA
 
 
 _ldl__ = [
+"BEDL_LDL", "EDL_LDL",
 # -------------------- 2025 --------------------
 "RG4LDL", "RKNN_LDL", "SNEFY_LDL", "_S_LDL", "S_LRR", "S_SCL", "S_KLD", "S_CJS", "S_QFD2", "Shallow_S_LDL", "Delta_LDL",
 # -------------------- 2024 --------------------

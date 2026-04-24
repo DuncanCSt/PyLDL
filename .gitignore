@@ -1,0 +1,7 @@
+build/*
+demo/dataset/*
+python_ldl.egg-info/*
+*.pyc
+*.c
+*.html
+*.so
