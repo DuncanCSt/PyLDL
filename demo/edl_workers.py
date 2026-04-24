@@ -24,10 +24,12 @@ def init_worker(gpu_queue, intra_op_threads=2, inter_op_threads=2):
     before TF imports anything CUDA-aware, which is why this happens here.
     """
     gpu_id = gpu_queue.get()
-    os.environ['CUDA_VISIBLE_DEVICES'] = '' if gpu_id is None else str(gpu_id)
+    os.environ['CUDA_VISIBLE_DEVICES'] = '-1' if gpu_id is None else str(gpu_id)
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
     import tensorflow as tf
+    if gpu_id is None:
+        tf.config.set_visible_devices([], 'GPU')
     for g in tf.config.list_physical_devices('GPU'):
         try:
             tf.config.experimental.set_memory_growth(g, True)
