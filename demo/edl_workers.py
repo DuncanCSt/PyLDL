@@ -17,7 +17,58 @@ MODEL_NAMES = [
 ]
 
 
-def init_worker(gpu_queue, intra_op_threads=2, inter_op_threads=2):
+def detect_gpus():
+    """Return list of GPU ids visible to nvidia-smi. Empty list if no GPUs.
+
+    Uses the nvidia-smi shell tool rather than `tf.config` so the parent
+    process never imports TensorFlow — that matters because once TF is
+    imported in the parent, it grabs CUDA state that conflicts with the
+    workers' own per-process pinning.
+    """
+    import subprocess
+    try:
+        out = subprocess.run(
+            ['nvidia-smi', '--query-gpu=index', '--format=csv,noheader'],
+            capture_output=True, text=True, timeout=5,
+        )
+        if out.returncode != 0:
+            return []
+        return [int(line.strip()) for line in out.stdout.splitlines() if line.strip()]
+    except (FileNotFoundError, subprocess.SubprocessError):
+        return []
+
+
+def auto_pool_config(min_gpus_for_gpu_mode=2, cpu_workers=None):
+    """Pick pool config based on what hardware is available.
+
+    GPU mode (>= `min_gpus_for_gpu_mode` GPUs found): one worker pinned per
+    GPU, single TF thread per worker (the GPU is the parallelism unit).
+
+    CPU mode (otherwise): a few fat workers (default ~`cpu_count // 4`), one
+    TF thread per worker. Heavy oversubscription destroys throughput because
+    every worker's TF op-graph fights every other worker's for cores.
+    """
+    import os
+    gpus = detect_gpus()
+    if len(gpus) >= min_gpus_for_gpu_mode:
+        return {
+            'mode': 'GPU',
+            'gpu_ids': gpus,
+            'n_workers': len(gpus),
+            'intra_op_threads': 1,
+            'inter_op_threads': 1,
+        }
+    n = cpu_workers if cpu_workers is not None else max(1, (os.cpu_count() or 2) // 4)
+    return {
+        'mode': 'CPU',
+        'gpu_ids': [],
+        'n_workers': n,
+        'intra_op_threads': 1,
+        'inter_op_threads': 1,
+    }
+
+
+def init_worker(gpu_queue, intra_op_threads=1, inter_op_threads=1):
     """Pin this worker to one GPU (or CPU-only) and configure TF.
 
     Called once per loky worker process. CUDA_VISIBLE_DEVICES must be set
