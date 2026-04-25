@@ -7,7 +7,6 @@ been pinned.
 """
 import os
 
-
 METRICS = ['chebyshev', 'clark', 'canberra', 'kl_divergence', 'cosine', 'intersection']
 
 MODEL_NAMES = [
@@ -75,8 +74,13 @@ def init_worker(gpu_queue, intra_op_threads=1, inter_op_threads=1):
     before TF imports anything CUDA-aware, which is why this happens here.
     """
     gpu_id = gpu_queue.get()
+    gpu_queue.put(gpu_id)                    # refill (worker-replacement fix)
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1' if gpu_id is None else str(gpu_id)
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+    # --- Stop TF from JIT-compiling kernels (cc1plus invocations) ---
+    os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=0 --tf_xla_cpu_global_jit=false'
+    os.environ['XLA_FLAGS']    = '--xla_hlo_profile=false'
 
     import tensorflow as tf
     if gpu_id is None:
@@ -146,6 +150,7 @@ def run_one_fold(dataset_name, model_name, fold_idx,
                  X_train, D_train, X_test, D_test, n_epochs):
     """Worker entrypoint. Returns dict with dataset, model, fold, scores."""
     from pyldl.metrics import score
+    import gc, keras
 
     spec = _build_specs()[model_name]
     fit_kwargs = dict(spec['fit_kwargs'])
@@ -161,6 +166,10 @@ def run_one_fold(dataset_name, model_name, fold_idx,
         rho, mean_u = _uncertainty_calibration(D_test, D_pred, uncertainty)
         fold_scores['mean_uncertainty'] = mean_u
         fold_scores['uncertainty_calibration'] = rho
+
+    keras.backend.clear_session()
+    del model
+    gc.collect()
 
     return {
         'dataset': dataset_name,
