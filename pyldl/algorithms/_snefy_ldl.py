@@ -33,7 +33,7 @@ class SNEFY_LDL(BaseAdam, BaseDeepLDL):
 
     @tf.function
     def _loss(self, X, D, start, end):
-        features = self._encoder(X)
+        features = self._encoder(X, training=True)
         latent = tf.math.exp(self._log_D[start:end] @ self._W + features + self._b)
         net = tf.reshape((tf.norm(latent @ tf.transpose(self._V), axis=1)**2), (-1, ))
         log = tf.math.log(net + EPS)
@@ -43,7 +43,8 @@ class SNEFY_LDL(BaseAdam, BaseDeepLDL):
     def _before_train(self):
         self._log_D = tf.math.log(self._D)
         self._encoder = self.get_3layer_model(self._n_features, self._n_hidden, self._n_hidden,
-                                              hidden_activation='relu', output_activation=None)
+                                              hidden_activation='relu', output_activation=None,
+                                              dropout_rate=self._dropout_rate)
         self._W = tf.Variable(tf.random.normal((self._n_outputs, self._n_hidden)), trainable=True)
         self._V = tf.Variable(tf.random.normal((self._n_latent, self._n_hidden), 0., 1.) *\
                               tf.sqrt(1. / (self._n_latent * self._n_hidden)), trainable=True)

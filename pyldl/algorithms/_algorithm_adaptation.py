@@ -246,11 +246,13 @@ class Duo_LDL(BaseAdam, BaseDeepLDL):
 
     def _get_default_model(self):
         output_units = self._n_outputs * (self._n_outputs - 1)
-        return self.get_3layer_model(self._n_features, self._n_hidden, output_units, output_activation='tanh')
+        return self.get_3layer_model(self._n_features, self._n_hidden, output_units,
+                                     output_activation='tanh',
+                                     dropout_rate=self._dropout_rate)
 
     @tf.function
     def _loss(self, X, _, start, end):
-        C_pred = self._call(X)
+        C_pred = self._call(X, training=True)
         return self.loss_function(self._C[start:end], C_pred)
 
     def _before_train(self):

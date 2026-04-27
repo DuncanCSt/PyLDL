@@ -47,18 +47,21 @@ class EDL_LDL(BaseAdam, BaseDeepLDL):
         'bayes_mse': edl_bayes_mse_loss,
     }
 
-    def _alpha(self, X):
-        return self._model(X) + 1.
+    def _alpha(self, X, training=False):
+        return self._model(X, training=training) + 1.
 
     def _loss(self, X, D, start, end):
-        return self._loss_fn(D, self._alpha(X))
+        return self._loss_fn(D, self._alpha(X, training=True))
+
+    def _get_default_model(self):
+        return self.get_3layer_model(
+            n_features=self._n_features, n_hidden=self._n_hidden,
+            n_outputs=self._n_outputs,
+            hidden_activation='relu', output_activation='softplus',
+            dropout_rate=self._dropout_rate,
+        )
 
     def _before_train(self):
-        self._model = self.get_3layer_model(
-            n_features=self._n_features, n_hidden=self._n_hidden, 
-            n_outputs=self._n_outputs,
-            hidden_activation='relu', output_activation='softplus'
-        )
         self._loss_fn = self._LOSSES[self._loss_type]
 
     def fit(self, X, D, loss_type='loglikelihood', **kwargs):

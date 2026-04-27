@@ -322,6 +322,7 @@ class _BaseDeep(keras.Model):
         keras.Model.__init__(self, **kwargs)
         self._n_hidden = n_hidden
         self._n_latent = n_latent
+        self._dropout_rate = 0.
         if random_state is not None:
             tf.random.set_seed(random_state)
         self._model = None
@@ -358,8 +359,8 @@ class _BaseDeep(keras.Model):
     def loss_function(Y, Y_pred):
         return tf.math.reduce_mean(keras.losses.mean_squared_error(Y, Y_pred))
 
-    def _call(self, X):
-        return self._model(X)
+    def _call(self, X, training=False):
+        return self._model(X, training=training)
 
     @staticmethod
     def get_2layer_model(n_features, n_outputs, activation='softmax'):
@@ -368,25 +369,31 @@ class _BaseDeep(keras.Model):
 
     @staticmethod
     def get_3layer_model(n_features, n_hidden, n_outputs,
-                         hidden_activation='sigmoid', output_activation='softmax'):
-        return keras.Sequential([keras.layers.InputLayer((n_features,)),
-                                 keras.layers.Dense(n_hidden, activation=hidden_activation),
-                                 keras.layers.Dense(n_outputs, activation=output_activation)])
+                         hidden_activation='sigmoid', output_activation='softmax',
+                         dropout_rate=0.):
+        layers = [keras.layers.InputLayer((n_features,)),
+                  keras.layers.Dense(n_hidden, activation=hidden_activation)]
+        if dropout_rate > 0.:
+            layers.append(keras.layers.Dropout(dropout_rate))
+        layers.append(keras.layers.Dense(n_outputs, activation=output_activation))
+        return keras.Sequential(layers)
 
     def _get_default_model(self):
-        return self.get_3layer_model(self._n_features, self._n_hidden, self._n_outputs)
+        return self.get_3layer_model(self._n_features, self._n_hidden, self._n_outputs,
+                                     dropout_rate=self._dropout_rate)
 
     def _before_train(self):
         pass
 
     @tf.function
     def _loss(self, X, Y, start, end):
-        Y_pred = self._call(X)
+        Y_pred = self._call(X, training=True)
         return self.loss_function(Y, Y_pred)
 
-    def fit(self, X, Y, model=None, metrics=None, verbose=0):
+    def fit(self, X, Y, model=None, metrics=None, verbose=0, dropout_rate=0.):
         self._verbose = verbose
         self._metrics = metrics or []
+        self._dropout_rate = float(dropout_rate)
         self._before_train()
         self._model = model or self._get_default_model()
 
