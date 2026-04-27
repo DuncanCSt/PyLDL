@@ -59,6 +59,38 @@ class LDLEarlyStopping(keras.callbacks.Callback):
             tf.print(f"Epoch {self._stopped_epoch}: early stopping (best {self._monitor}: {self._best}).")
 
 
+class LossHistory(keras.callbacks.Callback):
+    """Capture per-epoch values from `BaseGD`-style training logs.
+
+    After ``fit``, ``self.history`` is a dict ``{log_key: [per_epoch_values]}``.
+    Logs include ``'loss'`` (sum of training loss over batches) and any
+    validation metric registered on the model (via ``Model(metrics=[...])``,
+    ``model._metrics.append(...)``, or auto-registered by
+    :class:`LDLEarlyStopping`). Validation metrics only appear if
+    ``X_val``/``D_val`` were passed to ``fit``.
+
+    Example
+    -------
+    >>> history = LossHistory()
+    >>> model.fit(X_train, D_train, X_val=X_test, D_val=D_test,
+    ...           callbacks=[LDLEarlyStopping('kl_divergence', patience=20),
+    ...                      history])
+    >>> history.history['loss']           # per-epoch training loss
+    >>> history.history['kl_divergence']  # per-epoch validation KL
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.history = {}
+
+    def on_epoch_end(self, epoch, logs=None):
+        for k, v in (logs or {}).items():
+            try:
+                self.history.setdefault(k, []).append(float(v))
+            except (TypeError, ValueError):
+                pass
+
+
 def load_dataset(name, dir='dataset'):
     if not os.path.exists(dir):
         logging.info(f'Directory {dir} does not exist, creating it.')
