@@ -19,10 +19,11 @@ from pyldl.algorithms.utils import normalize, proj, softmax, binaryzation
 
 class LDLEarlyStopping(keras.callbacks.Callback):
 
-    def __init__(self, monitor='kl_divergence', patience=None):
+    def __init__(self, monitor='kl_divergence', patience=None, minimum=0):
         super().__init__()
         self._monitor = monitor
         self._patience = patience
+        self._minimum = int(minimum)
 
     def on_train_begin(self, logs=None):
         self._wait = 0
@@ -47,7 +48,8 @@ class LDLEarlyStopping(keras.callbacks.Callback):
             self._best_weights = self.model.get_weights()
         else:
             self._wait += 1
-            if self._patience is not None and self._wait >= self._patience:
+            if (self._patience is not None and self._wait >= self._patience
+                    and epoch >= self._minimum):
                 self._stopped_epoch = epoch
                 self.model.stop_training = True
                 self.model.set_weights(self._best_weights)

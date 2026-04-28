@@ -146,20 +146,100 @@ def _uncertainty_calibration(D_test, D_pred, uncertainty):
     return float(rho), float(np.mean(uncertainty))
 
 
+DEFAULT_HP = {
+    # Architecture
+    'n_hidden':       64,
+
+    # Optimizer (AdamW), only used when learning_rate is not None
+    'learning_rate':  1e-3,
+    'weight_decay':   1e-4,
+
+    # Regularization
+    'dropout_rate':   0.2,
+
+    # Training
+    'epochs':         2500,
+    'batch_size':     None,         # None → each model's own default
+    'val_fraction':   0.1,          # of the training fold; held out for early stop
+
+    # Early stopping (LDLEarlyStopping)
+    'patience':       100,
+    'minimum':        100,
+
+    # SA_BFGS only
+    'max_iterations': 50,
+}
+
+
 def run_one_fold(dataset_name, model_name, fold_idx,
-                 X_train, D_train, X_test, D_test, n_epochs):
-    """Worker entrypoint. Returns dict with dataset, model, fold, scores."""
+                 X_train, D_train, X_test, D_test, hp):
+    """Train one model on one fold with the given hyperparams, score on the
+    held-out test fold, return per-fold metrics.
+
+    `hp` is a dict that may contain any subset of the keys in
+    :data:`DEFAULT_HP`. Missing keys fall back to the defaults.
+    """
     from pyldl.metrics import score
+    from pyldl.utils import LDLEarlyStopping
+    from sklearn.model_selection import train_test_split
     import gc, keras
 
     spec = _build_specs()[model_name]
+    is_bfgs = (model_name == 'SA_BFGS')
+
+    # --- Architecture overrides ---
+    init_kwargs = dict(spec['init'])
+    if not is_bfgs and 'n_hidden' in hp:
+        init_kwargs['n_hidden'] = int(hp['n_hidden'])
+    model = spec['cls'](**init_kwargs)
+
+    # --- Fit ---
     fit_kwargs = dict(spec['fit_kwargs'])
-    if spec['uses_epochs']:
-        fit_kwargs['epochs'] = n_epochs
 
-    model = spec['cls'](**spec['init'])
-    model.fit(X_train, D_train, **fit_kwargs)
+    if is_bfgs:
+        # L-BFGS doesn't support optimizer / dropout / callbacks
+        fit_kwargs['max_iterations'] = int(hp.get('max_iterations', DEFAULT_HP['max_iterations']))
+        model.fit(X_train, D_train, **fit_kwargs)
+    else:
+        fit_kwargs['epochs']       = int(hp.get('epochs',       DEFAULT_HP['epochs']))
+        fit_kwargs['dropout_rate'] = float(hp.get('dropout_rate', DEFAULT_HP['dropout_rate']))
+        if hp.get('batch_size') is not None:
+            fit_kwargs['batch_size'] = int(hp['batch_size'])
 
+        # Optimizer: AdamW with explicit lr / weight_decay (skip if lr is None)
+        lr = hp.get('learning_rate', DEFAULT_HP['learning_rate'])
+        if lr is not None:
+            fit_kwargs['optimizer'] = keras.optimizers.AdamW(
+                learning_rate=float(lr),
+                weight_decay=float(hp.get('weight_decay', DEFAULT_HP['weight_decay'])),
+            )
+
+        # Early stopping: split the training fold into inner train/val so the
+        # test fold isn't peeked at for the early-stop signal.
+        callbacks = []
+        patience = hp.get('patience', DEFAULT_HP['patience'])
+        if patience is not None and patience > 0:
+            val_frac = float(hp.get('val_fraction', DEFAULT_HP['val_fraction']))
+            X_tr, X_val, D_tr, D_val = train_test_split(
+                X_train, D_train, test_size=val_frac, random_state=int(fold_idx),
+            )
+            fit_kwargs['X_val'] = X_val
+            fit_kwargs['D_val'] = D_val
+            callbacks.append(LDLEarlyStopping(
+                monitor='kl_divergence',
+                patience=int(patience),
+                minimum=int(hp.get('minimum', DEFAULT_HP['minimum'])),
+            ))
+            X_train_use, D_train_use = X_tr, D_tr
+        else:
+            X_train_use, D_train_use = X_train, D_train
+
+        if callbacks:
+            fit_kwargs['callbacks'] = callbacks
+
+        model.fit(X_train_use, D_train_use, **fit_kwargs)
+
+    # --- Score on the held-out test fold ---
     D_pred, uncertainty = _predict_with_uncertainty(model, spec['uncertainty_kind'], X_test)
     fold_scores = score(D_test, D_pred, metrics=METRICS, return_dict=True)
     if uncertainty is not None:
