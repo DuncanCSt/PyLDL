@@ -53,11 +53,9 @@ class BEDL_LDL(BaseAdam, BaseDeepLDL):
         belief = outputs[:, :-1]
         uncertainty = outputs[:, -1:]
 
-        W = tf.constant(2.0, dtype=belief.dtype)  # was: W = 2
+        evidence = self._W * belief / (uncertainty + EPS)
 
-        evidence = W * belief / (uncertainty + EPS)
-
-        alpha = evidence + self._Dbar * W
+        alpha = evidence + self._Dbar * self._W
 
         return alpha
 
@@ -75,19 +73,21 @@ class BEDL_LDL(BaseAdam, BaseDeepLDL):
     def _before_train(self):
         self._loss_fn = self._LOSSES[self._loss_type]
         self._Dbar = tf.reduce_mean(self._D, axis=0, keepdims=True)
-
+        self._W = tf.reduce_mean(self._Dbar*(1 - self._Dbar)/(np.var(self._D, axis=0) + EPS) - 1,
+                                 axis=0, keepdims=True)
+    
     def fit(self, X, D, loss_type='loglikelihood', **kwargs):
         if loss_type not in self._LOSSES:
             raise ValueError(f"loss_type must be one of {list(self._LOSSES)}, got {loss_type!r}")
         self._loss_type = loss_type
         return super().fit(X, D, **kwargs)
 
-    def predict(self, X, return_uncertainty=False):
+    def predict(self, X, return_uncertainty=True):
         alpha = self._alpha(X).numpy()
         alpha_0 = np.sum(alpha, axis=1, keepdims=True)
         D_pred = alpha / alpha_0
         if return_uncertainty:
             variance = alpha * (alpha_0 - alpha) / (alpha_0 ** 2 * (alpha_0 + 1.))
-            evidence_uncertainty = (self._n_outputs / alpha_0).reshape(-1)
-            return D_pred, variance, evidence_uncertainty
+            uncertainty = X[:, -1:]
+            return D_pred, variance, uncertainty
         return D_pred
