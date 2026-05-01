@@ -3,10 +3,6 @@
 Each SLURM array task picks one (model, dataset, fold) from JOBS via
 `SLURM_ARRAY_TASK_ID` and runs a complete BO hyperparameter search.
 
-Submit with:
-
-    sbatch --array=0-$(($(python -c "from run_one import JOBS; print(len(JOBS))") - 1)) ...
-
 Results are written to results/<model>/<dataset>/fold_<fold>.txt by
 hypertuner.run_search.
 """
