@@ -57,7 +57,7 @@ def _build_tuner(model_cls_name, directory, project_name,
         def build(self, hp):
             return model_cls(
                 n_hidden=hp.Choice('n_hidden', [4, 16, 64, 128]),
-                n_latent=hp.Choice('n_latent', [16]),
+                n_latent=hp.Fixed('n_latent', 16),
                 **extra_init_kwargs,
             )
 
@@ -65,10 +65,12 @@ def _build_tuner(model_cls_name, directory, project_name,
             lr       = hp.Choice('learning_rate', [1e-4, 1e-3, 1e-2])
             wd       = hp.Choice('weight_decay', [1e-5, 1e-4, 1e-3, 1e-2])
             dropout  = hp.Choice('dropout_rate', [0.0, 0.2, 0.4])
-            patience = hp.Choice('patience', [100])
-            minimum  = hp.Choice('minimum', [100])
-            bs       = hp.Choice('batch_size', [32, 64, 128])
-            max_epochs = hp.Choice('max_epochs', [2500])
+            patience = hp.Fixed('patience', 100)
+            minimum  = hp.Fixed('minimum', 100)
+            bs       = hp.Choice('batch_size', [16, 64, 128])
+            max_epochs = hp.Fixed('max_epochs', 2500)
+
+            keras.backend.clear_session()
 
             history = LossHistory()
             model.fit(
