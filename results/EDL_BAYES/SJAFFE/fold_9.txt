@@ -1,0 +1,17 @@
+{
+  "dataset": "SJAFFE",
+  "epochs_run": 167,
+  "hyperparameters": {
+    "batch_size": 64,
+    "dropout_rate": 0.0,
+    "learning_rate": 0.001,
+    "max_epochs": 2500,
+    "minimum": 100,
+    "n_hidden": 4,
+    "n_latent": 16,
+    "patience": 100,
+    "weight_decay": 0.01
+  },
+  "model": "EDL_BAYES",
+  "val_kl_divergence": 0.08098837016099401
+}

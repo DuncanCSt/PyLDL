@@ -1,0 +1,17 @@
+{
+  "dataset": "SJAFFE",
+  "epochs_run": 1234,
+  "hyperparameters": {
+    "batch_size": 32,
+    "dropout_rate": 0.0,
+    "learning_rate": 0.01,
+    "max_epochs": 2500,
+    "minimum": 100,
+    "n_hidden": 16,
+    "n_latent": 16,
+    "patience": 100,
+    "weight_decay": 0.001
+  },
+  "model": "BEDL",
+  "val_kl_divergence": 0.04230960591521962
+}
