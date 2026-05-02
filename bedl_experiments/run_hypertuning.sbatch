@@ -13,7 +13,8 @@ module --force purge
 module load StdEnv/2023
 module load python/3.12.4
 
-source ~/envs/pyldl/bin/activate
+# source ~/envs/pyldl/bin/activate
+export PYTHONPATH=/project/6004619/dcs01/PyLDL:$PYTHONPATH
 
 # Thread caps so loky workers don't oversubscribe BLAS/OMP threads
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
