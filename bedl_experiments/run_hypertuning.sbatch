@@ -28,4 +28,4 @@ echo "Node      : $(hostname)"
 echo "Array idx : $SLURM_ARRAY_TASK_ID"
 echo "GPU       : $CUDA_VISIBLE_DEVICES"
 
-python run_hypertuning.py
+python bedl_experiments/run_hypertuning.py
