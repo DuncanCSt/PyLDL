@@ -29,7 +29,7 @@ def _coerce(v):
 
 
 
-def _build_tuner(model_cls_name, directory, project_name,
+def _build_tuner(model_cls_name, dataset_name, fold, directory, project_name,
                  max_trials, executions_per_trial,
                  X_train, D_train, X_val, D_val,
                  extra_init_kwargs=None, extra_fit_kwargs=None,
@@ -46,19 +46,19 @@ def _build_tuner(model_cls_name, directory, project_name,
     class _PyLDLHyperModel(kt.HyperModel):
         def build(self, hp):
             return model_cls(
-                n_hidden=hp.Choice('n_hidden', HYPERTUNING_SETTINGS[model_cls_name]['n_hidden']),
-                n_latent=hp.Fixed('n_latent', HYPERTUNING_SETTINGS[model_cls_name]['n_latent']),
+                n_hidden=hp.Choice('n_hidden', HYPERTUNING_SETTINGS[dataset_name]['n_hidden']),
+                n_latent=hp.Fixed('n_latent', HYPERTUNING_SETTINGS[dataset_name]['n_latent']),
                 **extra_init_kwargs,
             )
 
         def fit(self, hp, model, **kwargs):
-            lr       = hp.Choice('learning_rate', HYPERTUNING_SETTINGS[model_cls_name]['learning_rate'])
-            wd       = hp.Choice('weight_decay', HYPERTUNING_SETTINGS[model_cls_name]['weight_decay'])
-            dropout  = hp.Choice('dropout_rate', HYPERTUNING_SETTINGS[model_cls_name]['dropout_rate'])
-            patience = hp.Fixed('patience', HYPERTUNING_SETTINGS[model_cls_name]['patience'])
-            minimum  = hp.Fixed('minimum', HYPERTUNING_SETTINGS[model_cls_name]['minimum'])
-            bs       = hp.Choice('batch_size', HYPERTUNING_SETTINGS[model_cls_name]['batch_size'])
-            max_epochs = hp.Fixed('max_epochs', HYPERTUNING_SETTINGS[model_cls_name]['max_epochs'])
+            lr       = hp.Choice('learning_rate', HYPERTUNING_SETTINGS[dataset_name]['learning_rate'])
+            wd       = hp.Choice('weight_decay', HYPERTUNING_SETTINGS[dataset_name]['weight_decay'])
+            dropout  = hp.Choice('dropout_rate', HYPERTUNING_SETTINGS[dataset_name]['dropout_rate'])
+            patience = hp.Fixed('patience', HYPERTUNING_SETTINGS[dataset_name]['patience'])
+            minimum  = hp.Fixed('minimum', HYPERTUNING_SETTINGS[dataset_name]['minimum'])
+            bs       = hp.Choice('batch_size', HYPERTUNING_SETTINGS[dataset_name]['batch_size'])
+            max_epochs = hp.Fixed('max_epochs', HYPERTUNING_SETTINGS[dataset_name]['max_epochs'])
 
             keras.backend.clear_session()
 
@@ -123,7 +123,7 @@ def run_search(model_cls_name, dataset_name, fold,
     project_name = f'{model_cls_name}__{dataset_name}__{fold}'
 
     tuner = _build_tuner(
-        model_cls_name=model_cls_name,
+        model_cls_name=model_cls_name, dataset_name=dataset_name, fold=fold,
         directory=directory, project_name=project_name,
         max_trials=max_trials, executions_per_trial=executions_per_trial,
         X_train=X_train, D_train=D_train, X_val=X_valid, D_val=D_valid,

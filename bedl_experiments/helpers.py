@@ -23,7 +23,7 @@ from pyldl.algorithms._bedl import EDL
 
 
 def load_data_fold(dataset_name, fold):
-    """Load (X_train, D_train, X_test, D_test) for this fold of this dataset."""
+    """Returns (X_train, D_train, X_test, D_test) for this fold of this dataset."""
     import scipy.io as sio
 
 
@@ -209,7 +209,7 @@ def fit_best_model(model, dataset, fold, train_data=None, valid_data=None, extra
     )
     return model_instance, history
 
-def plot_history(history):
+def plot_history(history, title=None):
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots()
@@ -223,6 +223,6 @@ def plot_history(history):
     ax2.legend(loc='upper right')
     plt.xlabel('Epoch')
     plt.ylabel('KL Divergence')
-    plt.title('Training History')
+    plt.title('Training History' if title is None else title)
     plt.legend()
     plt.show()
