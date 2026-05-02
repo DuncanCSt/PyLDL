@@ -2,31 +2,21 @@ import shutil
 from pathlib import Path
 from helpers import write_results, load_data_fold, _resolve_model_cls
 
-# def hyperparams_path(hyperparams_dir, model_cls_name, dataset_name):
-#     return Path(hyperparams_dir) / f'{model_cls_name}__{dataset_name}.txt'
 
+HYPERTUNING_SETTINGS = {
+    'Movie': {
+        'n_hidden': [4, 8, 16],
+        'n_latent': 16,
+        'learning_rate': [1e-3],
+        'weight_decay': [1e-5, 1e-4, 1e-3, 1e-2],
+        'dropout_rate': [0.0, 0.2, 0.4],
+        'patience': 50,
+        'minimum': 100,
+        'batch_size': [16, 128],
+        'max_epochs': 1500,
+    }
+}
 
-# def save_best_hyperparams(hyperparams_dir, model_cls_name, dataset_name,
-#                           hyperparameters, score):
-#     """Write best HPs + objective to <hyperparams_dir>/<model>__<dataset>.txt as JSON."""
-#     path = hyperparams_path(hyperparams_dir, model_cls_name, dataset_name)
-#     path.parent.mkdir(parents=True, exist_ok=True)
-#     payload = {
-#         'model': model_cls_name,
-#         'dataset': dataset_name,
-#         OBJECTIVE_NAME: float(score),
-#         'hyperparameters': {k: _coerce(v) for k, v in dict(hyperparameters).items()},
-#     }
-#     with open(path, 'w') as f:
-#         json.dump(payload, f, indent=2, sort_keys=True)
-#     return path
-
-
-# def load_best_hyperparams(hyperparams_dir, model_cls_name, dataset_name):
-#     """Read back what `save_best_hyperparams` wrote. Returns the full dict."""
-#     path = hyperparams_path(hyperparams_dir, model_cls_name, dataset_name)
-#     with open(path) as f:
-#         return json.load(f)
 
 
 def _coerce(v):
@@ -56,19 +46,19 @@ def _build_tuner(model_cls_name, directory, project_name,
     class _PyLDLHyperModel(kt.HyperModel):
         def build(self, hp):
             return model_cls(
-                n_hidden=hp.Choice('n_hidden', [4, 16, 64, 128]),
-                n_latent=hp.Fixed('n_latent', 16),
+                n_hidden=hp.Choice('n_hidden', HYPERTUNING_SETTINGS[model_cls_name]['n_hidden']),
+                n_latent=hp.Fixed('n_latent', HYPERTUNING_SETTINGS[model_cls_name]['n_latent']),
                 **extra_init_kwargs,
             )
 
         def fit(self, hp, model, **kwargs):
-            lr       = hp.Fixed('learning_rate', [1e-3])
-            wd       = hp.Choice('weight_decay', [1e-5, 1e-4, 1e-3, 1e-2])
-            dropout  = hp.Choice('dropout_rate', [0.0, 0.2, 0.4])
-            patience = hp.Fixed('patience', 10)
-            minimum  = hp.Fixed('minimum', 25)
-            bs       = hp.Choice('batch_size', [16, 64, 128])
-            max_epochs = hp.Fixed('max_epochs', 1500)
+            lr       = hp.Choice('learning_rate', HYPERTUNING_SETTINGS[model_cls_name]['learning_rate'])
+            wd       = hp.Choice('weight_decay', HYPERTUNING_SETTINGS[model_cls_name]['weight_decay'])
+            dropout  = hp.Choice('dropout_rate', HYPERTUNING_SETTINGS[model_cls_name]['dropout_rate'])
+            patience = hp.Fixed('patience', HYPERTUNING_SETTINGS[model_cls_name]['patience'])
+            minimum  = hp.Fixed('minimum', HYPERTUNING_SETTINGS[model_cls_name]['minimum'])
+            bs       = hp.Choice('batch_size', HYPERTUNING_SETTINGS[model_cls_name]['batch_size'])
+            max_epochs = hp.Fixed('max_epochs', HYPERTUNING_SETTINGS[model_cls_name]['max_epochs'])
 
             keras.backend.clear_session()
 

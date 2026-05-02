@@ -3,7 +3,7 @@ from sklearn.model_selection import KFold
 
 from helpers import write_results, load_data_fold, fit_best_model
 from pyldl.metrics import score
-from bedl_experiments.conformal_predictions import fsc_score
+from conformal_predictions import fsc_score
 
 METRICS = ['chebyshev', 'clark', 'canberra', 'kl_divergence', 'cosine', 'intersection']
 CONFORMAL_SCALAR_KEYS = ['worst_bin_fsc', 'joint_fsc']
