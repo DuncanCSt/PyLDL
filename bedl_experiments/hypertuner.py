@@ -65,10 +65,10 @@ def _build_tuner(model_cls_name, directory, project_name,
             lr       = hp.Choice('learning_rate', [1e-4, 1e-3, 1e-2])
             wd       = hp.Choice('weight_decay', [1e-5, 1e-4, 1e-3, 1e-2])
             dropout  = hp.Choice('dropout_rate', [0.0, 0.2, 0.4])
-            patience = hp.Fixed('patience', 100)
-            minimum  = hp.Fixed('minimum', 100)
+            patience = hp.Fixed('patience', 10)
+            minimum  = hp.Fixed('minimum', 50)
             bs       = hp.Choice('batch_size', [16, 64, 128])
-            max_epochs = hp.Fixed('max_epochs', 2500)
+            max_epochs = hp.Fixed('max_epochs', 1500)
 
             keras.backend.clear_session()
 
