@@ -19,7 +19,7 @@ MODELS   = ['EDL', 'EDL_BAYES', 'BEDL', 'BEDL_BAYES']
 DATASETS = ['Movie']
 FOLDS    = list(range(10))   # 10-fold CV
 
-MAX_TRIALS           = 25
+MAX_TRIALS           = 15
 EXECUTIONS_PER_TRIAL = 1
 
 

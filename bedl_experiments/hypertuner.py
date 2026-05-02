@@ -62,11 +62,11 @@ def _build_tuner(model_cls_name, directory, project_name,
             )
 
         def fit(self, hp, model, **kwargs):
-            lr       = hp.Choice('learning_rate', [1e-4, 1e-3, 1e-2])
+            lr       = hp.Fixed('learning_rate', [1e-3])
             wd       = hp.Choice('weight_decay', [1e-5, 1e-4, 1e-3, 1e-2])
             dropout  = hp.Choice('dropout_rate', [0.0, 0.2, 0.4])
             patience = hp.Fixed('patience', 10)
-            minimum  = hp.Fixed('minimum', 50)
+            minimum  = hp.Fixed('minimum', 25)
             bs       = hp.Choice('batch_size', [16, 64, 128])
             max_epochs = hp.Fixed('max_epochs', 1500)
 
@@ -99,7 +99,7 @@ def _build_tuner(model_cls_name, directory, project_name,
         objective=kt.Objective('kl_divergence', direction='min'),
         max_trials=max_trials,
         executions_per_trial=executions_per_trial,
-        num_initial_points=max(3, max_trials // 4),
+        num_initial_points=6,
         directory=directory,
         project_name=project_name,
         overwrite=overwrite,
@@ -130,7 +130,7 @@ def run_search(model_cls_name, dataset_name, fold,
         X, D, test_size=val_split, random_state=random_state)
 
     directory =  Path(__file__).parent / 'hypertuning_dir'
-    project_name = f'{model_cls_name}__{dataset_name}'
+    project_name = f'{model_cls_name}__{dataset_name}__{fold}'
 
     tuner = _build_tuner(
         model_cls_name=model_cls_name,
