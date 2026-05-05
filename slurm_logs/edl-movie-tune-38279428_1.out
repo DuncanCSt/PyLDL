@@ -1,0 +1,126 @@
+Node      : fc10503
+Array idx : 1
+GPU       : 0
+[1/3] EDL_BAYES × Movie × fold 0
+
+Search: Running Trial #1
+
+Value             |Best Value So Far |Hyperparameter
+4                 |4                 |n_hidden
+16                |16                |n_latent
+
+[2K[2KTrial 1 Complete [00h 09m 18s]
+kl_divergence: 0.10576572572277584
+
+Best kl_divergence So Far: 0.10576572572277584
+Total elapsed time: 00h 09m 18s
+
+Search: Running Trial #2
+
+Value             |Best Value So Far |Hyperparameter
+8                 |4                 |n_hidden
+16                |16                |n_latent
+0.001             |0.001             |learning_rate
+1e-05             |1e-05             |weight_decay
+0.4               |0                 |dropout_rate
+50                |50                |patience
+100               |100               |minimum
+16                |16                |batch_size
+1500              |1500              |max_epochs
+
+[2K[2KTrial 2 Complete [00h 55m 05s]
+kl_divergence: 0.10178148692940692
+
+Best kl_divergence So Far: 0.10178148692940692
+Total elapsed time: 01h 04m 23s
+
+Search: Running Trial #3
+
+Value             |Best Value So Far |Hyperparameter
+16                |8                 |n_hidden
+16                |16                |n_latent
+0.001             |0.001             |learning_rate
+0.001             |1e-05             |weight_decay
+0.2               |0.4               |dropout_rate
+50                |50                |patience
+100               |100               |minimum
+128               |16                |batch_size
+1500              |1500              |max_epochs
+
+[2K[2KTrial 3 Complete [00h 02m 01s]
+kl_divergence: 0.09897811605071355
+
+Best kl_divergence So Far: 0.09897811605071355
+Total elapsed time: 01h 06m 24s
+
+Search: Running Trial #4
+
+Value             |Best Value So Far |Hyperparameter
+4                 |16                |n_hidden
+16                |16                |n_latent
+0.001             |0.001             |learning_rate
+0.01              |0.001             |weight_decay
+0.4               |0.2               |dropout_rate
+50                |50                |patience
+100               |100               |minimum
+128               |128               |batch_size
+1500              |1500              |max_epochs
+
+[2K[2KTrial 4 Complete [00h 02m 06s]
+kl_divergence: 0.11639625848343434
+
+Best kl_divergence So Far: 0.09897811605071355
+Total elapsed time: 01h 08m 32s
+
+Search: Running Trial #5
+
+Value             |Best Value So Far |Hyperparameter
+4                 |16                |n_hidden
+16                |16                |n_latent
+0.001             |0.001             |learning_rate
+1e-05             |0.001             |weight_decay
+0.4               |0.2               |dropout_rate
+50                |50                |patience
+100               |100               |minimum
+16                |128               |batch_size
+1500              |1500              |max_epochs
+
+[2K[2KTrial 5 Complete [00h 15m 49s]
+kl_divergence: 0.1250129547479016
+
+Best kl_divergence So Far: 0.09897811605071355
+Total elapsed time: 01h 24m 24s
+
+Search: Running Trial #6
+
+Value             |Best Value So Far |Hyperparameter
+16                |16                |n_hidden
+16                |16                |n_latent
+0.001             |0.001             |learning_rate
+0.01              |0.001             |weight_decay
+0                 |0.2               |dropout_rate
+50                |50                |patience
+100               |100               |minimum
+16                |128               |batch_size
+1500              |1500              |max_epochs
+
+[2K[2KTrial 6 Complete [00h 07m 57s]
+kl_divergence: 0.09974339826113326
+
+Best kl_divergence So Far: 0.09897811605071355
+Total elapsed time: 01h 32m 26s
+
+Search: Running Trial #7
+
+Value             |Best Value So Far |Hyperparameter
+4                 |16                |n_hidden
+16                |16                |n_latent
+0.001             |0.001             |learning_rate
+0.01              |0.001             |weight_decay
+0.4               |0.2               |dropout_rate
+50                |50                |patience
+100               |100               |minimum
+128               |128               |batch_size
+1500              |1500              |max_epochs
+
+[2K

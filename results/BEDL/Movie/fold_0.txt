@@ -1,0 +1,17 @@
+{
+  "dataset": "Movie",
+  "epochs_run": 100,
+  "hyperparameters": {
+    "batch_size": 16,
+    "dropout_rate": 0.4,
+    "learning_rate": 0.001,
+    "max_epochs": 1500,
+    "minimum": 100,
+    "n_hidden": 16,
+    "n_latent": 16,
+    "patience": 50,
+    "weight_decay": 0.01
+  },
+  "model": "BEDL",
+  "val_kl_divergence": 0.09898777080713703
+}
