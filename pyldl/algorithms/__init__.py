@@ -28,6 +28,7 @@ from ._s_ldl import _S_LDL, S_LRR, S_SCL, S_KLD, S_QFD2, S_CJS, Shallow_S_LDL
 from ._delta_ldl import Delta_LDL
 from ._snefy_ldl import SNEFY_LDL
 from ._bedl import EDL, EDL_BAYES, BEDL, BEDL_BAYES
+from ._boojum import BOOJUM, BOOJUM_BAYES
 
 from ._ssg_ldl import SSG_LDL
 
@@ -37,7 +38,7 @@ from ._ldl_da import LDL_DA
 
 
 _ldl__ = [
-"EDL", "EDL_BAYES", "BEDL", "BEDL_BAYES",
+"EDL", "EDL_BAYES", "BEDL", "BEDL_BAYES", "Boojum", "Boojum_BAYES",
 # -------------------- 2025 --------------------
 "RG4LDL", "RKNN_LDL", "SNEFY_LDL", "_S_LDL", "S_LRR", "S_SCL", "S_KLD", "S_CJS", "S_QFD2", "Shallow_S_LDL", "Delta_LDL",
 # -------------------- 2024 --------------------
