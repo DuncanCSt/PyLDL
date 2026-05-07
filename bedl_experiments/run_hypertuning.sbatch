@@ -1,5 +1,4 @@
 #!/bin/bash
-#SBATCH --account=def-ashill
 #SBATCH --job-name=tuning_jobs
 #SBATCH --array=0-1
 # #SBATCH --gpus=h100:1

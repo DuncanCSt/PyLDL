@@ -1,15 +1,138 @@
 {
-  "dataset": "SJAFFE",
-  "hyperparameters": {
-    "batch_size": 16,
-    "dropout_rate": 0,
-    "learning_rate": 0.001,
-    "max_epochs": 2500,
-    "minimum": 100,
-    "n_hidden": 64,
-    "n_latent": 16,
-    "patience": 50,
-    "weight_decay": 1e-05
-  },
-  "model": "BOOJUM",
+  "canberra_mean": 0.9144140792059812,
+  "canberra_var": NaN,
+  "chebyshev_mean": 0.1193868390930604,
+  "chebyshev_var": NaN,
+  "clark_mean": 0.44814053435776224,
+  "clark_var": NaN,
+  "cosine_mean": 0.9327947331618038,
+  "cosine_var": NaN,
+  "intersection_mean": 0.8467353237308687,
+  "intersection_var": NaN,
+  "joint_fsc_mean": 0.5454545454545454,
+  "joint_fsc_var": NaN,
+  "kl_divergence_mean": 0.07124022456860336,
+  "kl_divergence_var": NaN,
+  "per_bin_fsc_mean": [
+    [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    [
+      0.8,
+      1.0,
+      1.0,
+      1.0,
+      0.8
+    ],
+    [
+      1.0,
+      1.0,
+      0.75,
+      0.5,
+      1.0
+    ],
+    [
+      0.6,
+      1.0,
+      1.0,
+      1.0,
+      0.6
+    ],
+    [
+      1.0,
+      0.75,
+      0.75,
+      1.0,
+      1.0
+    ],
+    [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ]
+  ],
+  "per_bin_fsc_var": [
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ]
+  ],
+  "per_label_fsc_mean": [
+    1.0,
+    0.9090909090909091,
+    0.8636363636363636,
+    0.8181818181818182,
+    0.9090909090909091,
+    1.0
+  ],
+  "per_label_fsc_var": [
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN
+  ],
+  "q_hat_mean": [
+    0.6647703635924811,
+    0.251903534512483,
+    0.3967389747353313,
+    0.18208614822511468,
+    0.2809652097145543,
+    0.16012581638092166
+  ],
+  "q_hat_var": [
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN,
+    NaN
+  ],
+  "worst_bin_fsc_mean": 0.5,
+  "worst_bin_fsc_var": NaN
 }

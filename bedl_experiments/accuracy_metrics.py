@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, ShuffleSplit
 
 from helpers import write_results, load_data_fold, fit_best_model
 from pyldl.metrics import score
@@ -9,20 +9,22 @@ METRICS = ['chebyshev', 'clark', 'canberra', 'kl_divergence', 'cosine', 'interse
 CONFORMAL_SCALAR_KEYS = ['worst_bin_fsc', 'joint_fsc']
 
 
-def run_metrics(model_cls_name, dataset_name, fold, n_splits=5,
+def run_metrics(model_cls_name, dataset_name, fold,
+                hyperparams=None,
+                n_splits=5, val_size=0.2,
                 random_state=42, confidence=0.9, bin_count=10):
     """Run accuracy and conformal-prediction metrics for a given model,
     dataset, and fold.
 
-    Refits the best model `n_splits` times on KFold splits of the fold's
+    Refits the best model `n_splits` times on ShuffleSplit splits of the fold's
     training data. For each trial: evaluates accuracy metrics on the
-    held-out test set, and uses the kfold validation split as the
+    held-out test set, and uses the ShuffleSplit validation split as the
     calibration set for split conformal prediction. Writes the per-metric
     mean and variance across trials.
     """
     X_train, D_train, X_test, D_test = load_data_fold(dataset_name, fold)
 
-    kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+    kf = ShuffleSplit(n_splits=n_splits, test_size=val_size, random_state=random_state)
     trial_scores = []
     trial_conformal = []
     for kf_train_idx, kf_val_idx in kf.split(X_train):
@@ -33,6 +35,7 @@ def run_metrics(model_cls_name, dataset_name, fold, n_splits=5,
             model_cls_name, dataset_name, fold,
             train_data={'X': X_kf_train, 'D': D_kf_train},
             valid_data={'X': X_kf_val, 'D': D_kf_val},
+            hyperparams=hyperparams,
         )
         D_pred = model.predict(X_test)
         trial_scores.append(score(D_test, D_pred, metrics=METRICS, return_dict=True))

@@ -166,14 +166,21 @@ def _resolve_model_cls(model_cls_name):
             f'unknown model {model_cls_name!r}; must be importable from pyldl.algorithms'
         ) from e
 
-def load_best_model(model, dataset, fold):
+def load_best_model(model, dataset, fold, hyperparams=None):
     """Load the best hyperparameters for this (model, dataset) and return a model instance."""
 
-    best_hps = read_results(model, dataset, fold)['hyperparameters']
+    if hyperparams is not None:
+        best_hps = hyperparams
+    else:
+        best_hps = read_results(model, dataset, fold)['hyperparameters']
     model_cls = _resolve_model_cls(model)
     return model_cls(n_hidden=best_hps['n_hidden'], n_latent=best_hps['n_latent'])
 
-def fit_best_model(model, dataset, fold, train_data=None, valid_data=None, extra_fit_kwargs=None):
+def fit_best_model(
+        model, dataset, fold, 
+        train_data=None, valid_data=None,
+        hyperparams=None,
+        extra_fit_kwargs=None):
     """Load the best hyperparameters for this (model, dataset), fit a model instance on the full training set, and return it."""
     from sklearn.model_selection import train_test_split
     from keras.optimizers import AdamW
@@ -186,8 +193,12 @@ def fit_best_model(model, dataset, fold, train_data=None, valid_data=None, extra
         X_train, D_train, _, _ = load_data_fold(dataset, fold)
         X_train, X_val, D_train, D_val = train_test_split(X_train, D_train, test_size=0.2, random_state=42)
 
-    hps = read_results(model, dataset, fold)['hyperparameters']
-    model_instance = load_best_model(model, dataset, fold)
+    if hyperparams is not None:
+        hps = hyperparams
+    else:
+        hps = read_results(model, dataset, fold)['hyperparameters']
+
+    model_instance = load_best_model(model, dataset, fold, hyperparams=hps)
     history = LossHistory()
     model_instance.fit(
         X_train, D_train,
