@@ -2,10 +2,8 @@ import shutil
 from pathlib import Path
 from helpers import write_results, load_data_fold, _resolve_model_cls
 
-
-HYPERTUNING_SETTINGS = {
-    'Movie': {
-        'n_hidden': [4, 8, 16],
+DEFAULT_HYPERTUNING_SETTING = {
+        'n_hidden': [8, 16, 32, 64],
         'n_latent': 16,
         'learning_rate': [1e-3],
         'weight_decay': [1e-5, 1e-4, 1e-3, 1e-2],
@@ -15,9 +13,6 @@ HYPERTUNING_SETTINGS = {
         'batch_size': [16, 128],
         'max_epochs': 1500,
     }
-}
-
-
 
 def _coerce(v):
     if isinstance(v, (int, float, str, bool)) or v is None:
@@ -30,7 +25,7 @@ def _coerce(v):
 
 
 def _build_tuner(model_cls_name, dataset_name, fold, directory, project_name,
-                 max_trials, executions_per_trial,
+                 max_trials, executions_per_trial, hypertuning_settings,
                  X_train, D_train, X_val, D_val,
                  extra_init_kwargs=None, extra_fit_kwargs=None,
                  overwrite=False):
@@ -46,19 +41,19 @@ def _build_tuner(model_cls_name, dataset_name, fold, directory, project_name,
     class _PyLDLHyperModel(kt.HyperModel):
         def build(self, hp):
             return model_cls(
-                n_hidden=hp.Choice('n_hidden', HYPERTUNING_SETTINGS[dataset_name]['n_hidden']),
-                n_latent=hp.Fixed('n_latent', HYPERTUNING_SETTINGS[dataset_name]['n_latent']),
+                n_hidden=hp.Choice('n_hidden', hypertuning_settings[dataset_name]['n_hidden']),
+                n_latent=hp.Fixed('n_latent', hypertuning_settings[dataset_name]['n_latent']),
                 **extra_init_kwargs,
             )
 
         def fit(self, hp, model, **kwargs):
-            lr       = hp.Choice('learning_rate', HYPERTUNING_SETTINGS[dataset_name]['learning_rate'])
-            wd       = hp.Choice('weight_decay', HYPERTUNING_SETTINGS[dataset_name]['weight_decay'])
-            dropout  = hp.Choice('dropout_rate', HYPERTUNING_SETTINGS[dataset_name]['dropout_rate'])
-            patience = hp.Fixed('patience', HYPERTUNING_SETTINGS[dataset_name]['patience'])
-            minimum  = hp.Fixed('minimum', HYPERTUNING_SETTINGS[dataset_name]['minimum'])
-            bs       = hp.Choice('batch_size', HYPERTUNING_SETTINGS[dataset_name]['batch_size'])
-            max_epochs = hp.Fixed('max_epochs', HYPERTUNING_SETTINGS[dataset_name]['max_epochs'])
+            lr       = hp.Choice('learning_rate', hypertuning_settings[dataset_name]['learning_rate'])
+            wd       = hp.Choice('weight_decay', hypertuning_settings[dataset_name]['weight_decay'])
+            dropout  = hp.Choice('dropout_rate', hypertuning_settings[dataset_name]['dropout_rate'])
+            patience = hp.Fixed('patience', hypertuning_settings[dataset_name]['patience'])
+            minimum  = hp.Fixed('minimum', hypertuning_settings[dataset_name]['minimum'])
+            bs       = hp.Choice('batch_size', hypertuning_settings[dataset_name]['batch_size'])
+            max_epochs = hp.Fixed('max_epochs', hypertuning_settings[dataset_name]['max_epochs'])
 
             keras.backend.clear_session()
 
@@ -98,6 +93,7 @@ def _build_tuner(model_cls_name, dataset_name, fold, directory, project_name,
 
 def run_search(model_cls_name, dataset_name, fold,
                max_trials, executions_per_trial,
+               hypertuning_settings=None,
                extra_init_kwargs=None, extra_fit_kwargs=None,
                val_split=0.2, random_state=0):
     """Run one BO search for (model_cls_name, dataset_name) on this worker's GPU.
@@ -122,10 +118,16 @@ def run_search(model_cls_name, dataset_name, fold,
     directory =  Path(__file__).parent / 'hypertuning_dir'
     project_name = f'{model_cls_name}__{dataset_name}__{fold}'
 
+    if hypertuning_settings is None:
+        hypertuning_settings = {
+            dataset_name: DEFAULT_HYPERTUNING_SETTING
+        }
+
     tuner = _build_tuner(
         model_cls_name=model_cls_name, dataset_name=dataset_name, fold=fold,
         directory=directory, project_name=project_name,
         max_trials=max_trials, executions_per_trial=executions_per_trial,
+        hypertuning_settings=hypertuning_settings,
         X_train=X_train, D_train=D_train, X_val=X_valid, D_val=D_valid,
         extra_init_kwargs=extra_init_kwargs, extra_fit_kwargs=extra_fit_kwargs,
     )

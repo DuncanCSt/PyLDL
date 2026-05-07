@@ -5,3 +5,5 @@ python_ldl.egg-info/*
 *.c
 *.html
 *.so
+.venv
+*.sbatch

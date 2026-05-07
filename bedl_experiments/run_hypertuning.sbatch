@@ -1,8 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=edl-movie-tune
-#SBATCH --array=0-39
-#SBATCH --gpus=h100:1
-#SBATCH --cpus-per-task=6
+#SBATCH --account=def-ashill
+#SBATCH --job-name=tuning_jobs
+#SBATCH --array=0-1
+# #SBATCH --gpus=h100:1
+#SBATCH --cpus-per-task=2
 #SBATCH --mem=12G
 #SBATCH --time=2:00:00
 #SBATCH --output=slurm_logs/%x-%A_%a.out

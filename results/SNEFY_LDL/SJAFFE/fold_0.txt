@@ -1,0 +1,17 @@
+{
+  "dataset": "SJAFFE",
+  "epochs_run": 100,
+  "hyperparameters": {
+    "batch_size": 16,
+    "dropout_rate": 0.0,
+    "learning_rate": 0.001,
+    "max_epochs": 1500,
+    "minimum": 100,
+    "n_hidden": 32,
+    "n_latent": 16,
+    "patience": 50,
+    "weight_decay": 1e-05
+  },
+  "model": "SNEFY_LDL",
+  "val_kl_divergence": 0.12340868494725747
+}
