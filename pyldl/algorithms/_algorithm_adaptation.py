@@ -43,6 +43,18 @@ class AA_BP(BaseGD, BaseDeepLDL):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    def predict(self, X, return_uncertainty=False, n_samples=50):
+        if not return_uncertainty:
+            return self._model(X, training=False).numpy()
+
+        samples = tf.stack(
+            [self._model(X, training=True) for _ in range(n_samples)], axis=0
+        )
+        D_pred = tf.reduce_mean(samples, axis=0).numpy()
+        variance = tf.math.reduce_variance(samples, axis=0).numpy()
+        uncertainty = np.sqrt(variance)
+        return D_pred, variance, uncertainty
+
 
 @keras.saving.register_keras_serializable()
 class CPNN(BaseGD, BaseDeepLDL):
