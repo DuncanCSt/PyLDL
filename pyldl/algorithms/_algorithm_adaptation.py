@@ -52,8 +52,7 @@ class AA_BP(BaseGD, BaseDeepLDL):
         )
         D_pred = tf.reduce_mean(samples, axis=0).numpy()
         variance = tf.math.reduce_variance(samples, axis=0).numpy()
-        uncertainty = np.sqrt(variance)
-        return D_pred, variance, uncertainty
+        return D_pred, variance
 
 
 @keras.saving.register_keras_serializable()

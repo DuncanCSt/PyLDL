@@ -19,6 +19,8 @@ from pathlib import Path
 import multiprocessing as mp
 from loky import get_reusable_executor
 from pyldl.algorithms._bedl import EDL
+import pandas as pd
+from typing import Optional
 
 
 
@@ -237,3 +239,139 @@ def plot_history(history, title=None):
     plt.title('Training History' if title is None else title)
     plt.legend()
     plt.show()
+
+def dataframe_to_latex_table(
+    df: pd.DataFrame,
+    output_file: str,
+    caption: str = "Table",
+    label: str = "tab:data",
+    bold_header: bool = True,
+    monospace_first_col: bool = True,
+    include_index: bool = False,
+    column_alignment: Optional[str] = None,
+    escape_special_chars: bool = True,
+    round_float: int = 4,
+) -> None:
+    """
+    Convert a pandas DataFrame to a LaTeX table and save to a text file.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The DataFrame to convert
+    output_file : str
+        Path to save the LaTeX table (e.g., 'table.txt')
+    caption : str, default "Table"
+        Table caption
+    label : str, default "tab:data"
+        LaTeX label for referencing the table
+    bold_header : bool, default True
+        Whether to bold the header row
+    monospace_first_col : bool, default True
+        Whether to format first column as monospace (texttt)
+    include_index : bool, default False
+        Whether to include the DataFrame index as first column
+    column_alignment : str, optional
+        Column alignment string (e.g., 'lccc'). If None, auto-generates based on content
+    escape_special_chars : bool, default True
+        Whether to escape LaTeX special characters
+    
+    Returns
+    -------
+    None
+        Saves the LaTeX code to output_file
+    
+    Examples
+    --------
+    >>> df = pd.DataFrame({
+    ...     'Model': ['Model A', 'Model B'],
+    ...     'Metric1': [0.85, 0.90],
+    ...     'Metric2': [0.92, 0.88]
+    ... })
+    >>> dataframe_to_latex_table(df, 'my_table.txt', 
+    ...                          caption='Model Performance',
+    ...                          label='tab:performance')
+    """
+    
+    # Create a copy to avoid modifying original
+    df_copy = df.copy()
+    
+    if not include_index:
+        df_copy = df_copy.reset_index(drop=True)
+    
+    # Number of columns
+    num_cols = len(df_copy.columns)
+    
+    # Auto-generate column alignment if not provided
+    if column_alignment is None:
+        # First column left-aligned, rest center-aligned
+        column_alignment = 'l' + 'c' * (num_cols - 1)
+    
+    # Escape special LaTeX characters
+    def escape_latex(text):
+        if not escape_special_chars:
+            return str(text)
+        text = str(text)
+        text = text.replace('\\', r'\textbackslash{}')
+        text = text.replace('_', r'\_')
+        text = text.replace('$', r'\$')
+        text = text.replace('#', r'\#')
+        text = text.replace('%', r'\%')
+        text = text.replace('&', r'\&')
+        text = text.replace('^', r'\^{}')
+        text = text.replace('~', r'\textasciitilde{}')
+        text = text.replace('{', r'\{')
+        text = text.replace('}', r'\}')
+        return text
+    
+    # Start building LaTeX code
+    latex_lines = []
+    
+    latex_lines.append(r"\begin{table}[h]")
+    latex_lines.append(r"\centering")
+    latex_lines.append(f"\\caption{{{escape_latex(caption)}}}")
+    latex_lines.append(f"\\label{{{label}}}")
+    latex_lines.append("")
+    latex_lines.append(f"\\begin{{tabular}}{{{column_alignment}}}")
+    latex_lines.append(r"\toprule")
+    
+    # Header row
+    header_cells = []
+    for col in df_copy.columns:
+        col_name = escape_latex(str(col))
+        if bold_header:
+            col_name = f"\\textbf{{{col_name}}}"
+        header_cells.append(col_name)
+    
+    header_row = " & ".join(header_cells) + r" \\"
+    latex_lines.append(header_row)
+    latex_lines.append(r"\midrule")
+    
+    # Data rows
+    for idx, row in df_copy.iterrows():
+        cells = []
+        for col_idx, (col, value) in enumerate(row.items()):
+            if isinstance(value, float):
+                cell_value = escape_latex(str(round(value, round_float)))
+            else:
+                cell_value = escape_latex(str(value))
+            
+            # Apply monospace formatting to first column if requested
+            if col_idx == 0 and monospace_first_col:
+                cell_value = f"\\texttt{{{cell_value}}}"
+            
+            cells.append(cell_value)
+        
+        row_str = " & ".join(cells) + r" \\"
+        latex_lines.append(row_str)
+    
+    latex_lines.append(r"\bottomrule")
+    latex_lines.append(r"\end{tabular}")
+    latex_lines.append("")
+    latex_lines.append(r"\end{table}")
+    
+    # Write to file
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(latex_lines))
+    
+    print(f"LaTeX table saved to: {output_file}")

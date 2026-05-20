@@ -99,11 +99,10 @@ class _BoojumBase(BaseAdam, BaseDeepLDL):
     def predict(self, X, return_uncertainty=False):
         alpha = np.asarray(self._alpha(X))
         alpha_0 = np.sum(alpha, axis=1, keepdims=True)
-        D_pred = alpha / alpha_0
+        D_pred = (alpha - 1) / (alpha_0 - alpha.shape[1])
         if return_uncertainty:
             variance = alpha * (alpha_0 - alpha) / (alpha_0 ** 2 * (alpha_0 + 1.))
-            uncertainty = (self._n_outputs / alpha_0).reshape(-1)
-            return D_pred, variance, uncertainty
+            return D_pred, variance
         return D_pred
 
 
@@ -114,7 +113,6 @@ class BOOJUM(_BoojumBase):
 
     """
 
-
 @keras.saving.register_keras_serializable()
 class BOOJUM_BAYES(BOOJUM):
     r""":class:`BOOJUM_BAYES <pyldl.algorithms.BOOJUM_BAYES>` is :class:`BOOJUM` trained with
@@ -122,5 +120,4 @@ class BOOJUM_BAYES(BOOJUM):
     """
 
     _LOSS = staticmethod(edl_bayes_mse_loss)
-
 

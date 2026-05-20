@@ -39,7 +39,7 @@ class _EDLBase(BaseAdam, BaseDeepLDL):
     def predict(self, X, return_uncertainty=False):
         alpha = self._alpha(X).numpy()
         alpha_0 = np.sum(alpha, axis=1, keepdims=True)
-        D_pred = alpha / alpha_0
+        D_pred = (alpha - 1) / (alpha_0 - alpha.shape[1])
         if return_uncertainty:
             variance = alpha * (alpha_0 - alpha) / (alpha_0 ** 2 * (alpha_0 + 1.))
             uncertainty = (self._n_outputs / alpha_0).reshape(-1)
@@ -108,10 +108,7 @@ class BEDL(_EDLBase):
 
     def _before_train(self):
         self._Dbar = tf.reduce_mean(self._D, axis=0, keepdims=True)
-        self._W = tf.reduce_mean(
-            self._Dbar * (1 - self._Dbar) / (np.var(self._D, axis=0) + EPS) - 1,
-            axis=0, keepdims=True,
-        )
+        self._W = 2
 
 
 @keras.saving.register_keras_serializable()
