@@ -154,3 +154,126 @@ def fsc_score(model, X_cal, D_cal, X_test, D_test,
         'worst_bin_fsc': worst_bin_fsc,
         'joint_fsc':     joint_fsc,
     }
+
+
+def marginal_calibration(model, X_test, D_test,
+                         X_cal=None, D_cal=None, levels=None) -> Dict:
+    r"""Marginal calibration check across all confidence levels.
+
+    This reads the model's *own* predictive distribution. For each
+    (sample, label) the method :meth:`coverage_level` returns the smallest
+    central credible level whose interval already contains the true value.
+    Empirical coverage at a target confidence ``gamma`` is then the fraction
+    of those values ``<= gamma``. Sweeping ``gamma`` over a grid traces the
+    full reliability curve.
+
+    A perfectly calibrated model has empirical coverage equal to nominal
+    confidence at *every* level (the reliability curve lies on the diagonal),
+    equivalently the ``coverage_level`` values are uniform on ``[0, 1]``.
+
+    **Recalibration (optional).** If a calibration set is supplied, the raw
+    nominal levels are replaced by *conformal thresholds* learned from it: for
+    target confidence ``gamma`` the threshold is the conformal quantile of the
+    calibration ``coverage_level`` values at level ``(n_cal + 1)·gamma / n_cal``
+    (the +1-correction giving finite-sample marginal coverage under
+    exchangeability). Testing ``c_min_test <= threshold`` then yields coverage
+    ``>= gamma`` even when the model's own credible levels are miscalibrated.
+    Without a calibration set the threshold is just ``gamma`` itself, i.e. the
+    model's raw, uncorrected calibration.
+
+    Parameters
+    ----------
+    model
+        A fitted PyLDL model exposing ``coverage_level(X, Y) -> (N, K)`` array
+        (``EDL`` / ``EDL_BAYES`` / ``BEDL`` / ``BEDL_BAYES`` / ``BOOJUM`` /
+        ``BOOJUM_BAYES``).
+    X_test, D_test
+        Held-out test features and true label distributions.
+    X_cal, D_cal
+        Optional calibration features and true label distributions, disjoint
+        from both training and test sets. If either is ``None`` the check is
+        run uncorrected. Used only to learn the conformal thresholds.
+    levels
+        1-D array of nominal confidence levels in ``[0, 1]`` at which to
+        evaluate coverage. Defaults to ``np.linspace(0, 1, 21)``.
+
+    Returns
+    -------
+    dict
+        ``levels``             : ndarray (M,) — nominal confidence grid.
+        ``calibrated``         : bool — whether conformal recalibration was applied.
+        ``thresholds``         : ndarray (M,) — credible-level cut-off applied at
+            each nominal level (equals ``levels`` when uncalibrated).
+        ``coverage_level``     : ndarray (N, K) — per-(sample, label) minimal
+            covering credible level on the test set.
+        ``per_label_coverage`` : ndarray (M, K) — empirical coverage per label
+            at each nominal level.
+        ``marginal_coverage``  : ndarray (M,) — empirical coverage pooled over
+            all (sample, label) pairs at each nominal level.
+        ``joint_coverage``     : ndarray (M,) — fraction of test samples whose
+            *all* K labels are covered simultaneously at each nominal level.
+        ``per_label_ece``      : ndarray (K,) — mean ``|empirical - nominal|``
+            over the grid, per label.
+        ``ece``                : float — expected calibration error, the
+            grid-averaged ``|marginal_coverage - levels|`` (headline figure).
+        ``max_ce``             : float — worst (max) calibration gap over the
+            grid; a stricter, worst-case calibration figure.
+    """
+    levels = (np.linspace(0., 1., 21) if levels is None
+              else np.asarray(levels, dtype=float))
+    if np.any((levels < 0.) | (levels > 1.)):
+        raise ValueError('levels must all lie in [0, 1]')
+
+    D_test = np.asarray(D_test, dtype=float)
+
+    # ------------------------------------------------------------------ #
+    # 1. Model-intrinsic coverage levels: c_min[i, k] is the smallest
+    #    credible level whose interval already contains D_test[i, k].
+    # ------------------------------------------------------------------ #
+    c_min = np.asarray(model.coverage_level(X_test, D_test), dtype=float)  # (N, K)
+
+    # ------------------------------------------------------------------ #
+    # 2. Per-level thresholds. Uncalibrated: the threshold is the nominal
+    #    level itself. Calibrated: the conformal quantile of the
+    #    calibration coverage levels, with the +1 finite-sample correction.
+    # ------------------------------------------------------------------ #
+    calibrated = X_cal is not None and D_cal is not None
+    if calibrated:
+        cal_c = np.asarray(model.coverage_level(X_cal, np.asarray(D_cal, float)),
+                            dtype=float).ravel()                      # (n_cal,)
+        n_cal = cal_c.size
+        q_levels = np.minimum(1.0, ((n_cal + 1) * levels) / n_cal)
+        thresholds = np.quantile(cal_c, q_levels, method='higher')    # (M,)
+    else:
+        thresholds = levels
+
+    # ------------------------------------------------------------------ #
+    # 3. Empirical coverage at every nominal level. Broadcasting c_min
+    #    (N, K, 1) against thresholds (M,) gives a (N, K, M) coverage mask.
+    # ------------------------------------------------------------------ #
+    covered = c_min[:, :, None] <= thresholds[None, None, :]          # (N, K, M)
+
+    per_label_coverage = covered.mean(axis=0).T                       # (M, K)
+    marginal_coverage  = covered.mean(axis=(0, 1))                    # (M,)
+    joint_coverage     = covered.all(axis=1).mean(axis=0)             # (M,)
+
+    # ------------------------------------------------------------------ #
+    # 4. Calibration error: gap between empirical and nominal coverage.
+    # ------------------------------------------------------------------ #
+    per_label_ece = np.abs(per_label_coverage - levels[:, None]).mean(axis=0)  # (K,)
+    gap           = np.abs(marginal_coverage - levels)                # (M,)
+    ece           = float(gap.mean())
+    max_ce        = float(gap.max())
+
+    return {
+        'levels':             levels,
+        'calibrated':         calibrated,
+        'thresholds':         thresholds,
+        'coverage_level':     c_min,
+        'per_label_coverage': per_label_coverage,
+        'marginal_coverage':  marginal_coverage,
+        'joint_coverage':     joint_coverage,
+        'per_label_ece':      per_label_ece,
+        'ece':                ece,
+        'max_ce':             max_ce,
+    }

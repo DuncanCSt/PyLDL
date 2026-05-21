@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.stats import beta as _beta
 
 import keras
 import tensorflow as tf
@@ -104,6 +105,40 @@ class _BoojumBase(BaseAdam, BaseDeepLDL):
             variance = alpha * (alpha_0 - alpha) / (alpha_0 ** 2 * (alpha_0 + 1.))
             return D_pred, variance
         return D_pred
+
+    def coverage_level(self, X, Y):
+        r"""Per-(sample, label) minimal credible level that covers ``Y``.
+
+        Each label's predictive marginal under :math:`\text{Dir}(\boldsymbol{\alpha}(X))`
+        is :math:`\text{Beta}(\alpha_k,\, \alpha_0 - \alpha_k)`. For a *central*
+        credible interval at level :math:`c`, the true value :math:`y` is covered
+        iff :math:`c \geq |2 F(y) - 1|`, where :math:`F` is the marginal Beta CDF.
+        This method returns that threshold :math:`c_{\min} = |2 F(y) - 1|` — the
+        smallest confidence level whose 100c% interval already contains ``Y``.
+
+        For a marginally calibrated model these values are uniform on
+        :math:`[0, 1]`, so the empirical coverage at confidence :math:`\gamma`
+        is ``(coverage_level(X, Y) <= gamma).mean()`` and should equal
+        :math:`\gamma`. Comparing the two over a grid of :math:`\gamma` (or
+        plotting them) is the marginal calibration check.
+
+        Parameters
+        ----------
+        X : array-like, shape (n, n_features)
+            Inputs.
+        Y : array-like, shape (n, K)
+            True label distributions.
+
+        Returns
+        -------
+        ndarray, shape (n, K)
+            Minimal central credible level covering each true label value.
+        """
+        alpha = np.asarray(self._alpha(X))
+        alpha_0 = np.sum(alpha, axis=1, keepdims=True)
+        Y = np.asarray(Y, dtype=float)
+        cdf = _beta.cdf(Y, alpha, alpha_0 - alpha)
+        return np.abs(2. * cdf - 1.)
 
 
 @keras.saving.register_keras_serializable()

@@ -56,7 +56,46 @@ class _MultiBase(BaseAdam, BaseDeepLDL):
     def _loss(self, X, D, start, end):
         a, b = self._alpha(X, training=True)
         return self._LOSS(D, a, b)
-    
+
+    def coverage_level(self, X, Y):
+        r"""Per-(sample, label) minimal credible level that covers ``Y``.
+
+        Each label's predictive marginal is the *exact* :math:`\text{Beta}`
+        distribution the model is trained under — :math:`\text{Beta}(a + 1,
+        b + 1)`, with ``(a, b)`` from :meth:`_alpha` and the ``+1`` matching
+        :func:`_multi_beta_log_pdf`.
+
+        For a *central* credible interval at level :math:`c`, the true value
+        :math:`y` is covered iff :math:`c \geq |2 F(y) - 1|`, where :math:`F`
+        is that Beta CDF. This method returns the threshold
+        :math:`c_{\min} = |2 F(y) - 1|` — the smallest confidence level whose
+        100c% interval already contains ``Y``.
+
+        For a marginally calibrated model these values are uniform on
+        :math:`[0, 1]`, so the empirical coverage at confidence :math:`\gamma`
+        is ``(coverage_level(X, Y) <= gamma).mean()`` and should equal
+        :math:`\gamma`.
+
+        Parameters
+        ----------
+        X : array-like, shape (n, n_features)
+            Inputs.
+        Y : array-like, shape (n, K)
+            True label distributions.
+
+        Returns
+        -------
+        ndarray, shape (n, K)
+            Minimal central credible level covering each true label value.
+        """
+        a, b = self._alpha(X)
+        a = np.asarray(a, dtype=float) + 1.
+        b = np.asarray(b, dtype=float) + 1.
+        Y = np.asarray(Y, dtype=float)
+        cdf = beta.cdf(Y, a, b)
+        return np.abs(2. * cdf - 1.)
+
+
 @keras.saving.register_keras_serializable()
 class multiBelief(_MultiBase):
     

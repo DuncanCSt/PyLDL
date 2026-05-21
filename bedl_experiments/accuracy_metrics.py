@@ -3,10 +3,11 @@ from sklearn.model_selection import KFold, ShuffleSplit
 
 from helpers import write_results, load_data_fold, fit_best_model
 from pyldl.metrics import score
-from conformal_predictions import fsc_score
+from conformal_predictions import fsc_score, marginal_calibration
 
 METRICS = ['chebyshev', 'clark', 'canberra', 'kl_divergence', 'cosine', 'intersection']
 CONFORMAL_SCALAR_KEYS = ['worst_bin_fsc', 'joint_fsc']
+MC_SCALAR_KEYS = ['ece', 'max_ce']
 
 
 def run_metrics(model_cls_name, dataset_name, fold,
@@ -27,6 +28,8 @@ def run_metrics(model_cls_name, dataset_name, fold,
     kf = ShuffleSplit(n_splits=n_splits, test_size=val_size, random_state=random_state)
     trial_scores = []
     trial_conformal = []
+    trial_marginal = []
+    trial_marginal_cal = []
     for kf_train_idx, kf_val_idx in kf.split(X_train):
         X_kf_train, D_kf_train = X_train[kf_train_idx], D_train[kf_train_idx]
         X_kf_val, D_kf_val = X_train[kf_val_idx], D_train[kf_val_idx]
@@ -43,6 +46,11 @@ def run_metrics(model_cls_name, dataset_name, fold,
         trial_conformal.append(fsc_score(
             model, X_kf_val, D_kf_val, X_test, D_test,
             confidence=confidence, bin_count=bin_count,
+        ))
+
+        trial_marginal.append(marginal_calibration(model, X_test, D_test))
+        trial_marginal_cal.append(marginal_calibration(
+            model, X_test, D_test, X_cal=X_kf_val, D_cal=D_kf_val,
         ))
 
     results = {}
@@ -67,6 +75,22 @@ def run_metrics(model_cls_name, dataset_name, fold,
     q_hat = np.stack([c['q_hat'] for c in trial_conformal], axis=0)
     results['q_hat_mean'] = q_hat.mean(axis=0).tolist()
     results['q_hat_var'] = q_hat.var(axis=0, ddof=1).tolist()
+
+    # Marginal calibration check. The uncalibrated trials measure the model's
+    # raw calibration; the `_cal` trials apply conformal recalibration using
+    # the ShuffleSplit validation split as the calibration set.
+    results['mc_levels'] = trial_marginal[0]['levels'].tolist()
+
+    for suffix, trials in [('', trial_marginal), ('_cal', trial_marginal_cal)]:
+        for key in MC_SCALAR_KEYS:
+            values = np.array([m[key] for m in trials], dtype=float)
+            results[f'{key}{suffix}_mean'] = float(values.mean())
+            results[f'{key}{suffix}_var'] = float(values.var(ddof=1))
+
+        for key in ['marginal_coverage', 'joint_coverage', 'per_label_ece']:
+            stacked = np.stack([m[key] for m in trials], axis=0)
+            results[f'{key}{suffix}_mean'] = stacked.mean(axis=0).tolist()
+            results[f'{key}{suffix}_var'] = stacked.var(axis=0, ddof=1).tolist()
 
     write_results(
         model=model_cls_name,

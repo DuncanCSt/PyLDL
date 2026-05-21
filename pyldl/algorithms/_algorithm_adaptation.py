@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.stats import beta as _beta
 from sklearn.neighbors import NearestNeighbors
 
 import keras
@@ -53,6 +54,54 @@ class AA_BP(BaseGD, BaseDeepLDL):
         D_pred = tf.reduce_mean(samples, axis=0).numpy()
         variance = tf.math.reduce_variance(samples, axis=0).numpy()
         return D_pred, variance
+
+    def coverage_level(self, X, Y, n_samples=50):
+        r"""Per-(sample, label) minimal credible level that covers ``Y``.
+
+        AA-BP estimates predictive uncertainty by Monte-Carlo dropout, giving a
+        per-label mean and variance but no parametric predictive distribution.
+        We approximate each label's marginal by a :math:`\text{Beta}`
+        distribution moment-matched to that MC-dropout mean and variance.
+
+        For a *central* credible interval at level :math:`c`, the true value
+        :math:`y` is covered iff :math:`c \geq |2 F(y) - 1|`, where :math:`F`
+        is that Beta CDF. This method returns the threshold
+        :math:`c_{\min} = |2 F(y) - 1|` — the smallest confidence level whose
+        100c% interval already contains ``Y``.
+
+        For a marginally calibrated model these values are uniform on
+        :math:`[0, 1]`, so the empirical coverage at confidence :math:`\gamma`
+        is ``(coverage_level(X, Y) <= gamma).mean()`` and should equal
+        :math:`\gamma`.
+
+        Parameters
+        ----------
+        X : array-like, shape (n, n_features)
+            Inputs.
+        Y : array-like, shape (n, K)
+            True label distributions.
+        n_samples : int
+            Number of MC-dropout forward passes used to estimate the mean and
+            variance.
+
+        Returns
+        -------
+        ndarray, shape (n, K)
+            Minimal central credible level covering each true label value.
+        """
+        mean, var = self.predict(X, return_uncertainty=True, n_samples=n_samples)
+        mean = np.clip(np.asarray(mean, dtype=float), EPS, 1. - EPS)
+        # A Beta on [0, 1] requires var < mean*(1-mean); clip for safety. A
+        # multiplicative upper bound keeps var strictly inside (0, max_var)
+        # even when mean is near 0/1 (where max_var - EPS could go negative).
+        max_var = mean * (1. - mean)
+        var = np.clip(np.asarray(var, dtype=float), EPS, max_var * (1. - 1e-3))
+        common = max_var / var - 1.
+        a = mean * common
+        b = (1. - mean) * common
+        Y = np.asarray(Y, dtype=float)
+        cdf = _beta.cdf(Y, a, b)
+        return np.abs(2. * cdf - 1.)
 
 
 @keras.saving.register_keras_serializable()
