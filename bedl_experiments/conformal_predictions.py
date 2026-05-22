@@ -277,3 +277,102 @@ def marginal_calibration(model, X_test, D_test,
         'ece':                ece,
         'max_ce':             max_ce,
     }
+
+
+def joint_calibration(model, X_test, D_test,
+                      X_cal=None, D_cal=None, levels=None) -> Dict:
+    r"""Joint calibration check across all confidence levels.
+
+    The multivariate analogue of :func:`marginal_calibration`. The joint
+    credible region is the box formed by the per-label central intervals, all
+    at the same credible level ``c``. By the AND rule a sample is covered iff
+    *every* label is covered, which happens iff ``c >= max_k c_min(i, k)``.
+    The per-sample joint coverage level is therefore
+
+        ``joint_c_min(i) = max_k coverage_level(i, k)``
+
+    — the worst (widest-needing) label drags the joint region out. This 1-D
+    score is then run through the same thresholding / conformal-recalibration
+    machinery as :func:`marginal_calibration`.
+
+    **Reference line.** Uncalibrated, empirical joint coverage at level ``c``
+    sits *below* ``c`` (the box at per-label level ``c`` has joint mass below
+    ``c``); that gap is the structural K-label effect, not miscalibration, so
+    ``joint_ece`` is *not* meaningful uncalibrated. With a calibration set the
+    conformal threshold forces empirical joint coverage onto the nominal
+    level, so ``joint_ece`` (calibrated) *is* a valid joint calibration error.
+
+    Parameters
+    ----------
+    model
+        A fitted PyLDL model exposing ``coverage_level(X, Y) -> (N, K)`` array.
+    X_test, D_test
+        Held-out test features and true label distributions.
+    X_cal, D_cal
+        Optional calibration features and true label distributions, disjoint
+        from training and test. If either is ``None`` the check is uncorrected.
+    levels
+        1-D array of nominal confidence levels in ``[0, 1]``. Defaults to
+        ``np.linspace(0, 1, 21)``.
+
+    Returns
+    -------
+    dict
+        ``levels``         : ndarray (M,) — nominal confidence grid.
+        ``calibrated``     : bool — whether conformal recalibration was applied.
+        ``thresholds``     : ndarray (M,) — joint credible-level cut-off per
+            nominal level (equals ``levels`` when uncalibrated).
+        ``joint_c_min``    : ndarray (N,) — per-sample joint coverage level
+            ``max_k coverage_level(i, k)``.
+        ``joint_coverage`` : ndarray (M,) — empirical joint coverage (all K
+            labels covered simultaneously) at each nominal level.
+        ``joint_ece``      : float — grid-averaged ``|joint_coverage - levels|``
+            (a valid joint calibration error only when ``calibrated`` is True).
+        ``joint_max_ce``   : float — worst joint calibration gap over the grid.
+    """
+    levels = (np.linspace(0., 1., 21) if levels is None
+              else np.asarray(levels, dtype=float))
+    if np.any((levels < 0.) | (levels > 1.)):
+        raise ValueError('levels must all lie in [0, 1]')
+
+    D_test = np.asarray(D_test, dtype=float)
+
+    # ------------------------------------------------------------------ #
+    # 1. Per-sample joint coverage level: the worst per-label coverage
+    #    level — the smallest box-level whose region covers every label.
+    # ------------------------------------------------------------------ #
+    c_min = np.asarray(model.coverage_level(X_test, D_test), dtype=float)  # (N, K)
+    joint_c_min = c_min.max(axis=1)                                       # (N,)
+
+    # ------------------------------------------------------------------ #
+    # 2. Per-level thresholds — nominal level itself, or the conformal
+    #    quantile of the calibration joint coverage levels.
+    # ------------------------------------------------------------------ #
+    calibrated = X_cal is not None and D_cal is not None
+    if calibrated:
+        cal_c = np.asarray(model.coverage_level(X_cal, np.asarray(D_cal, float)),
+                            dtype=float).max(axis=1)                      # (n_cal,)
+        n_cal = cal_c.size
+        q_levels = np.minimum(1.0, ((n_cal + 1) * levels) / n_cal)
+        thresholds = np.quantile(cal_c, q_levels, method='higher')        # (M,)
+    else:
+        thresholds = levels
+
+    # ------------------------------------------------------------------ #
+    # 3. Empirical joint coverage and calibration error.
+    # ------------------------------------------------------------------ #
+    joint_coverage = (joint_c_min[:, None] <= thresholds[None, :]).mean(axis=0)  # (M,)
+
+    gap          = np.abs(joint_coverage - levels)                        # (M,)
+    joint_ece    = float(gap.mean())
+    joint_max_ce = float(gap.max())
+
+    return {
+        'levels':         levels,
+        'calibrated':     calibrated,
+        'thresholds':     thresholds,
+        'joint_c_min':    joint_c_min,
+        'joint_coverage': joint_coverage,
+        'joint_ece':      joint_ece,
+        'joint_max_ce':   joint_max_ce,
+    }
