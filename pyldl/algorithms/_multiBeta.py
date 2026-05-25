@@ -12,10 +12,9 @@ EPS = np.finfo(np.float32).eps
 @tf.function
 def _multi_beta_log_pdf(D, a, b):
     """Per-sample sum of log Beta(a+1, b+1) densities across labels. Returns [N]."""
-    a = tf.cast(a, D.dtype)
-    b = tf.cast(b, D.dtype)
-    alpha = a + 1.0
-    beta_ = b + 1.0
+    alpha = tf.cast(a, D.dtype)
+    beta_ = tf.cast(b, D.dtype)
+
     log_B = (tf.math.lgamma(alpha) + tf.math.lgamma(beta_)
              - tf.math.lgamma(alpha + beta_))
     log_pdf = ((alpha - 1.0) * tf.math.log(D + EPS)
@@ -89,8 +88,8 @@ class _MultiBase(BaseAdam, BaseDeepLDL):
             Minimal central credible level covering each true label value.
         """
         a, b = self._alpha(X)
-        a = np.asarray(a, dtype=float) + 1.
-        b = np.asarray(b, dtype=float) + 1.
+        a = np.asarray(a, dtype=float)
+        b = np.asarray(b, dtype=float)
         Y = np.asarray(Y, dtype=float)
         cdf = beta.cdf(Y, a, b)
         return np.abs(2. * cdf - 1.)
@@ -103,8 +102,8 @@ class multiBelief(_MultiBase):
         outputs = self._model(X, training=training)
         belief = outputs[:, :self._n_outputs]
         uncertainty = outputs[:, self._n_outputs:]
-        a = self._W * ( belief + uncertainty ) / (uncertainty + EPS)
-        b = self._W * (1 - belief - uncertainty) / (uncertainty + EPS)
+        a = self._W * ( belief + uncertainty ) / (uncertainty + EPS) + 1
+        b = self._W * (1 - belief - uncertainty) / (uncertainty + EPS) + 1
         return a, b
     
     def predict(self, X, return_uncertainty=False):
