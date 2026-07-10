@@ -1,0 +1,25 @@
+\begin{table}[h]
+\centering
+\caption{Accuracy and conformal metrics for SJAFFE and SBU\_3DFE datasets}
+\label{tab:sjaffe_sbu_accuracy}
+
+\begin{tabular}{lcccc}
+\toprule
+\textbf{model} & \textbf{dataset} & \textbf{kl\_divergence} & \textbf{joint\_fsc} & \textbf{worst\_bin\_fsc} \\
+\midrule
+\texttt{DP} & Flickr & 0.670±0.004 & 0.770±0.002 & 0.584±0.014 \\
+\texttt{multiBDL} & Flickr & 0.792±0.007 & 0.401±0.004 & 0.819±0.009 \\
+\texttt{BDL} & Flickr & 1.737±0.006 & 0.364±0.007 & 0.645±0.011 \\
+\texttt{EDL} & Flickr & 3.997±0.088 & 0.407±0.005 & 0.834±0.003 \\
+\texttt{EDL} & SBU\_3DFE & 0.067±0.001 & 0.488±0.012 & 0.762±0.013 \\
+\texttt{multiBDL} & SBU\_3DFE & 0.067±0.001 & 0.482±0.013 & 0.790±0.010 \\
+\texttt{BDL} & SBU\_3DFE & 0.070±0.001 & 0.482±0.011 & 0.745±0.013 \\
+\texttt{DP} & SBU\_3DFE & 0.076±0.001 & 0.480±0.008 & 0.765±0.007 \\
+\texttt{multiBDL} & SJAFFE & 0.042±0.002 & 0.586±0.036 & 0.568±0.030 \\
+\texttt{BDL} & SJAFFE & 0.042±0.003 & 0.551±0.034 & 0.518±0.039 \\
+\texttt{EDL} & SJAFFE & 0.060±0.005 & 0.510±0.034 & 0.488±0.022 \\
+\texttt{DP} & SJAFFE & 0.073±0.004 & 0.498±0.045 & 0.547±0.031 \\
+\bottomrule
+\end{tabular}
+
+\end{table}
